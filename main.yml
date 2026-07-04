@@ -1,0 +1,15 @@
+name: Audio Automation
+on:
+  push:
+    paths:
+      - 'input_scripts/**'
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup Environment
+        run: echo "Pipeline Initialized Successfully"
