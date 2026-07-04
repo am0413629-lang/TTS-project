@@ -1,23 +1,56 @@
-name: Pro TTS Factory
-on: [push]
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.9'
-      - name: Install System Tools
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg
-      - name: Install Python Deps
-        run: pip install edge-tts pydub
-      - name: Run Engine
-        run: python main.py
-      - name: Upload results
-        uses: actions/upload-artifact@v4
-        with:
-          name: audio-factory-output
-          path: final_*.mp3
+import asyncio
+import edge_tts
+from pydub import AudioSegment
+import subprocess
+import os
+
+# الإعدادات
+TEXT = "أهلاً بك في نظامنا الاحترافي. هذا النص يتم تحويله للغات متعددة وبنفس المدة الزمنية."
+LANGUAGES = {
+    "ar": "ar-SA-ZariyahNeural",
+    "en": "en-US-AnaNeural" 
+}
+
+async def generate_audio():
+    files = {}
+    
+    # 1. توليد الملفات مع حماية
+    for lang, voice in LANGUAGES.items():
+        filename = f"output_{lang}.mp3"
+        print(f"جاري توليد: {filename}")
         
+        try:
+            communicate = edge_tts.Communicate(TEXT, voice)
+            await communicate.save(filename)
+            
+            # التأكد أن الملف تم إنشاؤه وحجمه أكبر من صفر
+            if os.path.exists(filename) and os.path.getsize(filename) > 0:
+                files[filename] = AudioSegment.from_mp3(filename).duration_seconds
+            else:
+                print(f"تحذير: الملف {filename} فارغ، سيتم تخطيه.")
+        except Exception as e:
+            print(f"حدث خطأ أثناء توليد {lang}: {e}")
+            continue # أكمل للغة اللي بعدها لو حصل خطأ
+
+    # 2. حساب المتوسط (فقط لو فيه ملفات تم إنشاؤها)
+    if not files:
+        print("لم يتم إنشاء أي ملفات. المصنع توقف.")
+        return
+
+    avg_duration = sum(files.values()) / len(files)
+    print(f"المتوسط الحسابي للزمن هو: {avg_duration} ثانية.")
+
+    # 3. الموازنة (Normalization)
+    for filename, duration in files.items():
+        # تقريب المدة لضمان التساوي
+        tempo = duration / avg_duration
+        output_final = f"final_{filename}"
+        
+        # استخدام فلتر atempo مع مراعاة سرعة معقولة (بين 0.5 و 2.0)
+        tempo = max(0.5, min(tempo, 2.0)) 
+        
+        cmd = ['ffmpeg', '-i', filename, '-filter:a', f"atempo={tempo}", '-vn', output_final, '-y']
+        subprocess.run(cmd)
+        print(f"تم ضبط {filename} ليصبح قريباً من {avg_duration} ثانية.")
+
+asyncio.run(generate_audio())
