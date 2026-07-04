@@ -1,4 +1,4 @@
-name: TTS Bot Factory
+name: Pro TTS Factory
 on: [push]
 jobs:
   build:
@@ -9,14 +9,14 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.9'
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install gTTS
-      - name: Run script
+      - name: Install System Tools
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Install Python Deps
+        run: pip install edge-tts pydub
+      - name: Run Engine
         run: python main.py
-      - name: Upload result
+      - name: Upload results
         uses: actions/upload-artifact@v4
         with:
-          name: output-audio
-          path: output.mp3
+          name: audio-factory-output
+          path: output_*.mp3
