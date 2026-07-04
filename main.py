@@ -1,13 +1,22 @@
-from gtts import gTTS
-import os
-
-# النص اللي إنت عايزه ينطق
-text = "مرحباً بك في عالم البرمجة، هذا أول صوت لي من داخل المصنع!"
-
-# تحويل النص لصوت (باللغة العربية)
-tts = gTTS(text=text, lang='ar')
-
-# حفظ الملف
-tts.save("output.mp3")
-
-print("تم تحويل النص إلى ملف صوتي بنجاح! الملف اسمه output.mp3")
+name: TTS Bot Factory
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Run script
+        run: python main.py
+      - name: Upload result
+        uses: actions/upload-artifact@v4
+        with:
+          name: output-audio
+          path: output.mp3
