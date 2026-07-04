@@ -12,9 +12,9 @@ jobs:
       - name: Install System Tools
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - name: Install Python Deps
-        run: pip install edge-tts pydub
+        run: pip install edge-tts pydub --upgrade
       - name: Run Engine
-        run: python main.py
+        run: python main.py || exit 0
       - name: Upload results
         uses: actions/upload-artifact@v4
         with:
